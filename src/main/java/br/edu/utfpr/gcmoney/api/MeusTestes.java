@@ -7,6 +7,7 @@ import java.awt.geom.RectangularShape;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,8 @@ import javax.swing.JOptionPane;
 
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridEnvelope2D;
+import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.GridCoverage2DReader;
@@ -59,11 +62,19 @@ import org.geotools.swing.data.JParameterListWizard;
 import org.geotools.swing.wizard.JWizard;
 import org.geotools.util.KVP;
 import org.geotools.util.factory.Hints;
+import org.locationtech.jts.geom.Geometry;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.geometry.Envelope;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.style.ContrastMethod;
+
+import com.google.gson.Gson;
+
+import br.edu.utfpr.gcmoney.api.model.sr.DatasetAdb;
+import br.edu.utfpr.gcmoney.api.model.sr.Extras;
+import br.edu.utfpr.gcmoney.api.model.sr.LayerAdb;
+
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.Name;
 
@@ -140,8 +151,11 @@ public class MeusTestes {
         CoordinateReferenceSystem crs = coverage.getCoordinateReferenceSystem2D();
         Envelope env = coverage.getEnvelope();
         RenderedImage image = coverage.getRenderedImage();
-        Raster raster = image.getData();
+        //Raster raster = image.getData();
         
+        
+        /*
+        // Recuperando valores de IV do objeto Raster
         float coresIv[] = new float[255];
         int coresRgb[] = new int[255];  
 	    // esse vetor "cores[]" vai armazenar as cores RGB  
@@ -172,8 +186,10 @@ public class MeusTestes {
     	        }  
     	    }
         }
+        */
         
-        // Extrair Features de arquivo raster utilizando Process
+        
+        // Extrair Features de objeto GridCoverage2D utilizando Process
         ProcessExecutor engine = Processors.newProcessExecutor(2);
         Name name = new NameImpl("ras", "PolygonExtraction");
         process = Processors.createProcess(name);
@@ -185,16 +201,44 @@ public class MeusTestes {
         SimpleFeatureCollection features = (SimpleFeatureCollection) result.get("result");
 	    
         SimpleFeatureIterator iterator = features.features();
+        
+        List<DatasetAdb> datasets = new ArrayList<DatasetAdb>();
         try {
             while (iterator.hasNext()) {
                 SimpleFeature feature = iterator.next();
-                // process feature
-                System.out.println(feature.toString());
                 
+                // process feature
+                Geometry g = (Geometry) feature.getAttribute( 0 ); // Atributo geométrico
+                Double i = (Double) feature.getAttribute( 1 ); // Valor do pixel
+                
+                DatasetAdb ds = new DatasetAdb();
+                
+                if (i != -9999.0) {
+                	double[] coords = new double[2];
+                    coords[0] = g.getCentroid().getCoordinate().x;
+                    coords[1] = g.getCentroid().getCoordinate().y;
+                    
+                    ds.setCoordinates(coords);
+                    ds.setData(i);
+                    datasets.add(ds);
+                }
+                
+                
+                //ds.setX(g.getCoordinate().x);
+                //ds.setY(g.getCoordinate().y);
+                
+                
+                //System.out.println("pixel: " + feature.getID() + " x: " + g.getCoordinate().x + ", y: " + g.getCoordinate().y + " Valor IV: " + i);
             }
         } finally {
             iterator.close();
         }
+        
+        //System.out.println("CRS: " + crs.getCoordinateSystem());
+        
+        System.out.println(rasterFile.getPath());
+        
+        this.criarJson(datasets, rasterFile.getPath(), rasterFile.getName());
         
         /*
         // Convertendo SimpleFeatureCollection em GeoJSON
@@ -209,6 +253,7 @@ public class MeusTestes {
         System.out.println(dataStore);
         */
         
+        /*
         // Testando conversão de Polygon para Point
         String transform = "the_geom=the_geom\\n\" + \"name=name\\n\" + \"area=area( the_geom )";
 
@@ -227,45 +272,46 @@ public class MeusTestes {
         } finally {
             iterator.close();
         }
+        */
 
-        // Create a JMapFrame with a menu to choose the display style for the
-        frame = new JMapFrame(map);
-        frame.setSize(800, 600);
-        frame.enableStatusBar(true);
-        // frame.enableTool(JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
-        frame.enableToolBar(true);
-        
-        frame.enableLayerTable(true);
-
-        JMenuBar menuBar = new JMenuBar();
-        frame.setJMenuBar(menuBar);
-        JMenu menu = new JMenu("Raster");
-        menuBar.add(menu);
-
-        menu.add(
-                new SafeAction("Grayscale display") {
-                    public void action(ActionEvent e) throws Throwable {
-                        Style style = createGreyscaleStyle();
-                        if (style != null) {
-                            ((StyleLayer) map.layers().get(0)).setStyle(style);
-                            frame.repaint();
-                        }
-                    }
-                });
-
-        menu.add(
-                new SafeAction("RGB display") {
-                    public void action(ActionEvent e) throws Throwable {
-                        Style style = createRGBStyle();
-                        if (style != null) {
-                            ((StyleLayer) map.layers().get(0)).setStyle(style);
-                            frame.repaint();
-                        }
-                    }
-                });
-        // Finally display the map frame.
-        // When it is closed the app will exit.
-        frame.setVisible(true);
+//        // Create a JMapFrame with a menu to choose the display style for the
+//        frame = new JMapFrame(map);
+//        frame.setSize(800, 600);
+//        frame.enableStatusBar(true);
+//        // frame.enableTool(JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
+//        frame.enableToolBar(true);
+//        
+//        frame.enableLayerTable(true);
+//
+//        JMenuBar menuBar = new JMenuBar();
+//        frame.setJMenuBar(menuBar);
+//        JMenu menu = new JMenu("Raster");
+//        menuBar.add(menu);
+//
+//        menu.add(
+//                new SafeAction("Grayscale display") {
+//                    public void action(ActionEvent e) throws Throwable {
+//                        Style style = createGreyscaleStyle();
+//                        if (style != null) {
+//                            ((StyleLayer) map.layers().get(0)).setStyle(style);
+//                            frame.repaint();
+//                        }
+//                    }
+//                });
+//
+//        menu.add(
+//                new SafeAction("RGB display") {
+//                    public void action(ActionEvent e) throws Throwable {
+//                        Style style = createRGBStyle();
+//                        if (style != null) {
+//                            ((StyleLayer) map.layers().get(0)).setStyle(style);
+//                            frame.repaint();
+//                        }
+//                    }
+//                });
+//        // Finally display the map frame.
+//        // When it is closed the app will exit.
+//        frame.setVisible(true);
     }
     
     /**
@@ -381,6 +427,35 @@ public class MeusTestes {
         sym.setChannelSelection(sel);
 
         return SLD.wrapSymbolizers(sym);
+    }
+    
+    private void criarJson(List<DatasetAdb> datasets, String nomeArquivo, String nomeLayer) {
+    	LayerAdb layer = new LayerAdb();
+    	layer.setName(nomeLayer);
+    	layer.setDescription(nomeLayer);
+    	layer.setDataset(datasets);
+    	Extras ex = new Extras();
+    	ex.setDatum("EPSG:3857");
+    	layer.setExtras(ex);
+    	layer.setType("SAMPLE");
+    	
+    	Gson gson = new Gson();
+    	String json = gson.toJson(layer);
+    	
+    	FileWriter writeFile = null;
+    	    	
+    	try{
+			writeFile = new FileWriter(nomeArquivo +".json");
+			//Escreve no arquivo conteudo do Objeto JSON
+			writeFile.write(json);
+			writeFile.close();
+			
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+    	
+    	System.out.println(json);
     }
  
 }
