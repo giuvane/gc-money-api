@@ -1,0 +1,8 @@
+CREATE TABLE agroapikey (
+	codigo BIGINT(20) PRIMARY KEY AUTO_INCREMENT,
+	name VARCHAR(50) NOT NULL,
+	apikey VARCHAR(50),
+	ativo BOOLEAN NOT NULL,
+	codigo_usuario BIGINT(20) NOT NULL,
+	FOREIGN KEY (codigo_usuario) REFERENCES usuario(codigo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

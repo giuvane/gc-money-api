@@ -25,19 +25,31 @@ import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.Name;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 
+import br.edu.utfpr.gcmoney.api.model.Pessoa;
+import br.edu.utfpr.gcmoney.api.model.sr.AgroApiKey;
 import br.edu.utfpr.gcmoney.api.model.sr.DatasetAdb;
 import br.edu.utfpr.gcmoney.api.model.sr.Extras;
 import br.edu.utfpr.gcmoney.api.model.sr.LayerAdb;
+import br.edu.utfpr.gcmoney.api.repository.SrRepository;
 
 @Service
 public class SrService {
 	
+	@Autowired
+	private SrRepository srRepository;
+	
 	private AbstractGridCoverage2DReader reader;
     private Process process;
+    
+    public AgroApiKey salvar(AgroApiKey agroapikey) {
+		
+		return srRepository.save(agroapikey);
+	}
 	
 	public String getJsonFromFile(File rasterFile, String nomeLayer) throws Exception {
 		AbstractGridFormat format = GridFormatFinder.findFormat(rasterFile);
