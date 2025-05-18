@@ -48,16 +48,4 @@ public class SrResource {
 		return this.srService.getJsonFromFile(file, nomeLayer);
 		
 	}
-	
-	@PostMapping
-	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_PESSOA') and #oauth2.hasScope('write')")
-	public ResponseEntity<AgroApiKey> criarAgroApiKey(@Valid @RequestBody AgroApiKey agroapikey, HttpServletResponse response) {
-		//Pessoa pessoaSalva = this.pessoaRepository.save(pessoa); // Comentado ao ser adicionado Contato em Pessoa
-		AgroApiKey agroApiKeySalvo = this.srService.salvar(agroapikey);
-		
-		publisher.publishEvent(new RecursoCriadoEvent(this, response, agroApiKeySalvo.getCodigo()));
-		
-		return ResponseEntity.status(HttpStatus.CREATED).body(agroApiKeySalvo);
-	}
-
 }
