@@ -79,4 +79,9 @@ public class AgroApiKeyService {
     public Optional<AgroApiKey> getAgroApiKeyByCodigo(Long codigo) {
         return this.srRepository.findById(codigo);
     }
+
+    @Transactional
+    public Optional<AgroApiKey> getAgroApiKeyByUserCode(Long codigo) {
+        return this.srRepository.findByUsuarioCodigo(codigo);
+    }
 }
