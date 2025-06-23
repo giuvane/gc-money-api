@@ -1,12 +1,11 @@
 package br.edu.utfpr.gcmoney.api.service;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import br.edu.utfpr.gcmoney.api.DisableSslValidation;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
@@ -26,16 +25,20 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.Name;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 
-import br.edu.utfpr.gcmoney.api.model.Pessoa;
 import br.edu.utfpr.gcmoney.api.model.sr.AgroApiKey;
 import br.edu.utfpr.gcmoney.api.model.sr.DatasetAdb;
 import br.edu.utfpr.gcmoney.api.model.sr.Extras;
 import br.edu.utfpr.gcmoney.api.model.sr.LayerAdb;
 import br.edu.utfpr.gcmoney.api.repository.SrRepository;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class SrService {
@@ -50,10 +53,32 @@ public class SrService {
 		
 		return srRepository.save(agroapikey);
 	}
+
+    public String createJsonAndSendToAdb(File rasterFile, String nomeLayer, String adbToken) throws Exception {
+        String json = getJsonFromFile(rasterFile, nomeLayer);
+
+        DisableSslValidation.execute();  // <<< Desativa validação SSL só para essa chamada
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        String adbUrl = "https://adb.md.utfpr.edu.br/api/map/project/684e6a77bbdad9001f99623d/layer";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", adbToken);
+
+        HttpEntity<String> request = new HttpEntity<>(json, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(adbUrl, request, String.class);
+
+        System.out.println("Status: " + response.getStatusCode());
+
+        return json;
+    }
 	
 	public String getJsonFromFile(File rasterFile, String nomeLayer) throws Exception {
 		AbstractGridFormat format = GridFormatFinder.findFormat(rasterFile);
-        // this is a bit hacky but does make more geotiffs work
+
         Hints hints = new Hints();
         if (format instanceof GeoTiffFormat) {
             hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
@@ -63,7 +88,7 @@ public class SrService {
         GridCoverage2D coverage = reader.read(null);
         CoordinateReferenceSystem crs = coverage.getCoordinateReferenceSystem2D();
         
-     // Extrair Features de objeto GridCoverage2D utilizando Process
+        // Extrair Features de objeto GridCoverage2D utilizando Process
         ProcessExecutor engine = Processors.newProcessExecutor(2);
         Name name = new NameImpl("ras", "PolygonExtraction");
         process = Processors.createProcess(name);

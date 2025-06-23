@@ -3,27 +3,16 @@ package br.edu.utfpr.gcmoney.api.resource;
 import java.io.File;
 import java.net.URL;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-
+import br.edu.utfpr.gcmoney.api.dto.SendToAdbRequest;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.edu.utfpr.gcmoney.api.event.RecursoCriadoEvent;
-import br.edu.utfpr.gcmoney.api.model.Pessoa;
-import br.edu.utfpr.gcmoney.api.model.sr.AgroApiKey;
 import br.edu.utfpr.gcmoney.api.service.SrService;
 
 @RestController
@@ -36,16 +25,16 @@ public class SrResource {
 	@Autowired
 	private ApplicationEventPublisher publisher; // Atributo criado para chamar o Evento criado
 	
-	@GetMapping
+	@PostMapping
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_PESSOA') and #oauth2.hasScope('read')")
-	public String listar(@RequestParam String link, @RequestParam String nomeLayer) throws Exception {
+	public String sendToAdb(@RequestBody SendToAdbRequest request) throws Exception {
 		
-		URL url = new URL(link);
+		URL url = new URL(request.getLink());
         File file = new File("temp");
 
         FileUtils.copyURLToFile(url, file);
 		
-		return this.srService.getJsonFromFile(file, nomeLayer);
+		return this.srService.createJsonAndSendToAdb(file, request.getNomeLayer(), request.getAdbToken());
 		
 	}
 }
