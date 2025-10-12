@@ -33,8 +33,12 @@ public class SrResource {
         File file = new File("temp");
 
         FileUtils.copyURLToFile(url, file);
-		
-		return this.srService.createJsonAndSendToAdb(file, request.getNomeLayer(), request.getAdbToken());
-		
-	}
+
+		return this.srService.createJsonAndSendToAdb(
+                file,
+                request.getNomeLayer(),
+                request.getAdbToken(),
+                request.getProjectId()
+        );
+    }
 }

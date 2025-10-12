@@ -4,6 +4,7 @@ public class SendToAdbRequest {
     private String link;
     private String nomeLayer;
     private String adbToken;
+    private String projectId;
 
     public String getLink() {
         return link;
@@ -27,5 +28,13 @@ public class SendToAdbRequest {
 
     public void setAdbToken(String adbToken) {
         this.adbToken = adbToken;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 }

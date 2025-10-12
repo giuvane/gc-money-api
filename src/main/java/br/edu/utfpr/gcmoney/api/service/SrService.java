@@ -54,26 +54,30 @@ public class SrService {
 		return srRepository.save(agroapikey);
 	}
 
-    public String createJsonAndSendToAdb(File rasterFile, String nomeLayer, String adbToken) throws Exception {
-        String json = getJsonFromFile(rasterFile, nomeLayer);
+    public String createJsonAndSendToAdb(File rasterFile, String nomeLayer, String adbToken, String projectId) throws Exception {
+        try {
+            String json = getJsonFromFile(rasterFile, nomeLayer);
 
-        DisableSslValidation.execute();  // <<< Desativa validação SSL só para essa chamada
+            DisableSslValidation.execute();
 
-        RestTemplate restTemplate = new RestTemplate();
+            RestTemplate restTemplate = new RestTemplate();
 
-        String adbUrl = "https://adb.md.utfpr.edu.br/api/map/project/684e6a77bbdad9001f99623d/layer";
+            String adbUrl = "https://adb.md.utfpr.edu.br/api/map/project/"+ projectId +"/layer";
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", adbToken);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", adbToken);
 
-        HttpEntity<String> request = new HttpEntity<>(json, headers);
+            HttpEntity<String> request = new HttpEntity<>(json, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(adbUrl, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(adbUrl, request, String.class);
 
-        System.out.println("Status: " + response.getStatusCode());
+            System.out.println("Status: " + response.getStatusCode());
 
-        return json;
+            return json;
+        } catch (Exception e) {
+            return null;
+        }
     }
 	
 	public String getJsonFromFile(File rasterFile, String nomeLayer) throws Exception {
