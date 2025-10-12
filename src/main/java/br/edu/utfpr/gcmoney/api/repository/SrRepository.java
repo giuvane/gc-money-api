@@ -4,6 +4,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import br.edu.utfpr.gcmoney.api.model.sr.AgroApiKey;
 
-public interface SrRepository extends JpaRepository<AgroApiKey, Long> {
+import java.util.Optional;
 
+public interface SrRepository extends JpaRepository<AgroApiKey, Long> {
+    void deleteByCodigo(Long codigo);
+    Optional<AgroApiKey> findByUsuarioCodigo(Long codigoUsuario);
 }
